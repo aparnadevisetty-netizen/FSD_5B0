@@ -6,15 +6,17 @@ import dotenv from "dotenv";
  app.use(express.json());
  //db connection
  dotenv.config();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 8000;
 const mongo_url = process.env.MONGO_URI;
 const DB_NAME = process.env.DB_NAME;
 
-mongoose.connect(mongo_url,{dbName: DB_NAME}).then(()=>{
-    console.log("Connected to MongoDB");
+if (mongo_url) {
+    mongoose.connect(mongo_url,{dbName: DB_NAME}).then(()=>{
+        console.log("Connected to MongoDB");
     }).catch((err)=>{
         console.log("Problem while connecting to MongoDB: ",err);
     });
+}
 
 //schema and model
 const movieSchema = new mongoose.Schema({

@@ -18,10 +18,12 @@ const mongoUri = process.env.MONGO_URI;
 const dbName = process.env.DB_NAME;
 
 // Connect to MongoDB
-mongoose
-  .connect(mongoUri, { dbName })
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("Failed to connect to MongoDB", err));
+if (mongoUri) {
+  mongoose
+    .connect(mongoUri, { dbName })
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((err) => console.error("Failed to connect to MongoDB", err));
+}
 
   // Define the Post schema and model
 const postSchema = new mongoose.Schema({
