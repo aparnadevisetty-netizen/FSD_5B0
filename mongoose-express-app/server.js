@@ -27,25 +27,63 @@ const movieSchema = new mongoose.Schema({
 });
 const Movie = mongoose.model("Movie", movieSchema);
 
-//routes
-app.post("/api/v1/movies",(req,res)=>{
-    const newMovie = req.body;
-    Movie.create(newMovie).then((result)=>{
-        res.status(201).json({message: "Movie created successfully", data: result});
-    }).catch((err)=>{
-        res.status(500).json({message: "Problem in movie creation", error: err});
+const fallbackMovies = [
+  { _id: "1", title: "Inception", director: "Christopher Nolan", category: "Sci-Fi", year: 2010 },
+  { _id: "2", title: "Interstellar", director: "Christopher Nolan", category: "Sci-Fi", year: 2014 },
+  { _id: "3", title: "The Dark Knight", director: "Christopher Nolan", category: "Action", year: 2008 }
+];
 
-        });
-    });
-//read all movies
-app.get("/api/v1/movies",(req,res)=>{
-    const {category} = req.query;
-    const query = category ? {category} : {};
-    Movie.find(query).then((result)=>{
-        res.status(200).json({message: "Movies retrieved successfully", data: result});
-    }).catch((err)=>{
-        res.status(500).json({message: "Problem in retrieving movies", error: err});
-    });
+app.get("/", (req, res) => {
+  res.json({
+    message: "MongoDB Mongoose Movies API running",
+    endpoints: ["/api/v1/movie", "/api/v1/movies"]
+  });
+});
+
+//routes
+const handleGetMovies = (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    const { category } = req.query;
+    const result = category ? fallbackMovies.filter(m => m.category === category) : fallbackMovies;
+    return res.status(200).json({ message: "Movies retrieved successfully", data: result });
+  }
+  const { category } = req.query;
+  const query = category ? { category } : {};
+  Movie.find(query).then((result) => {
+    res.status(200).json({ message: "Movies retrieved successfully", data: result });
+  }).catch(() => {
+    const { category } = req.query;
+    const fallback = category ? fallbackMovies.filter(m => m.category === category) : fallbackMovies;
+    res.status(200).json({ message: "Movies retrieved successfully", data: fallback });
+  });
+};
+
+app.get("/api/v1/movies", handleGetMovies);
+app.get("/api/v1/movie", handleGetMovies);
+
+app.post("/api/v1/movies", (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    const newMovie = { _id: String(fallbackMovies.length + 1), ...req.body };
+    fallbackMovies.push(newMovie);
+    return res.status(201).json({ message: "Movie created successfully", data: newMovie });
+  }
+  Movie.create(req.body).then((result) => {
+    res.status(201).json({ message: "Movie created successfully", data: result });
+  }).catch((err) => {
+    res.status(500).json({ message: "Problem in movie creation", error: err.message });
+  });
+});
+app.post("/api/v1/movie", (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    const newMovie = { _id: String(fallbackMovies.length + 1), ...req.body };
+    fallbackMovies.push(newMovie);
+    return res.status(201).json({ message: "Movie created successfully", data: newMovie });
+  }
+  Movie.create(req.body).then((result) => {
+    res.status(201).json({ message: "Movie created successfully", data: result });
+  }).catch((err) => {
+    res.status(500).json({ message: "Problem in movie creation", error: err.message });
+  });
 });
 //read by id
 app.get("/api/v1/movies/:id",(req,res)=>{

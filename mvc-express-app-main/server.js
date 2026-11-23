@@ -13,7 +13,16 @@ app.use(express.json());
 //establishing connection with mongodb
 connectDB(MONGO_URI);
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Movie API server is running",
+    endpoints: ["/api/v1/movie", "/api/v1/movies"]
+  });
+});
+
 app.use("/api/v1/movies", movieRoutes);
+app.use("/api/v1/movie", movieRoutes);
 
 //404
 app.use((req, res) => {

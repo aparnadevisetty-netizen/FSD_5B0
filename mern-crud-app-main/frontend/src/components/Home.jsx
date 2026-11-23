@@ -11,7 +11,7 @@ function Home() {
     async function fetchPosts() {
       try {
         const response = await fetch(
-          "https://fsd-backend-qjoc.onrender.com/api/v1/posts"
+          "https://mern-crud-backend-sl63.onrender.com/api/v1/posts"
         );
 
         if (!response.ok) {

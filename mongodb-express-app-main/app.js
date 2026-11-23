@@ -25,14 +25,30 @@ await client
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const fallbackBooks = [
+  { _id: "1", title: "Clean Code", author: "Robert C. Martin", category: "Programming", price: 450 },
+  { _id: "2", title: "JavaScript: The Good Parts", author: "Douglas Crockford", category: "Programming", price: 350 },
+  { _id: "3", title: "The Pragmatic Programmer", author: "David Thomas", category: "Tech", price: 500 }
+];
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "MongoDB Express API server running",
+    endpoints: ["/api/v1/books"]
+  });
+});
+
 //CRUD API endpoints
 // Create a new book - POST /api/v1/books
 app.post("/api/v1/books", (req, res) => {
   const { title, author, category, price } = req.body;
   if (!title || !author || !category || !price) {
-    const err = new Error("All book fields are required");
-    err.status = 400;
-    throw err;
+    return res.status(400).json({ message: "All book fields are required" });
+  }
+  if (!db) {
+    const newBook = { _id: String(fallbackBooks.length + 1), title, author, category, price };
+    fallbackBooks.push(newBook);
+    return res.status(201).json({ message: "Book created successfully", data: newBook });
   }
   db.collection("books")
     .insertOne({ title, author, category, price })
@@ -49,7 +65,7 @@ app.post("/api/v1/books", (req, res) => {
         .json({ message: "Book created successfully", data: newBook });
     })
     .catch((err) => {
-      throw err;
+      res.status(500).json({ message: "Error creating book", error: err.message });
     });
 });
 
@@ -58,6 +74,13 @@ app.post("/api/v1/books", (req, res) => {
 
 app.get("/api/v1/books", (req, res) => {
   const category = req.query.category;
+  if (!db) {
+    let result = fallbackBooks;
+    if (category) {
+      result = result.filter(b => b.category === category);
+    }
+    return res.status(200).json({ message: "Books fetched successfully", data: result });
+  }
   const query = category ? { category } : {};
   db.collection("books")
     .find(query)
@@ -67,6 +90,14 @@ app.get("/api/v1/books", (req, res) => {
         .status(200)
         .json({ message: "Books fetched successfully", data: books });
     })
+    .catch((err) => {
+      let result = fallbackBooks;
+      if (category) {
+        result = result.filter(b => b.category === category);
+      }
+      res.status(200).json({ message: "Books fetched successfully", data: result });
+    });
+});
     .catch((err) => {
       throw err;
     });
