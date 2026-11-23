@@ -98,10 +98,6 @@ app.get("/api/v1/books", (req, res) => {
       res.status(200).json({ message: "Books fetched successfully", data: result });
     });
 });
-    .catch((err) => {
-      throw err;
-    });
-});
 
 // Get a single book by ID - GET /api/v1/books/:id
 app.get("/api/v1/books/:id", (req, res) => {
